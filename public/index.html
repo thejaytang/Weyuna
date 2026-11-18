@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#5e6ce8" />
+    <meta
+      name="description"
+      content="Weyuna is an interactive messaging product prototype inspired by modern messenger workflows."
+    />
+    <title>Weyuna</title>
+    <link rel="icon" href="/assets/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css?v=directory1" />
+  </head>
+  <body>
+    <div class="boot-screen" id="boot-screen">
+      <img src="/assets/mark.svg" alt="" width="64" height="64" />
+      <strong>Weyuna</strong>
+      <span>Opening your conversations...</span>
+      <div class="boot-spinner" aria-hidden="true"></div>
+    </div>
+
+    <div class="app-shell" id="app-shell" hidden>
+      <aside class="nav-rail" aria-label="Primary navigation">
+        <button class="brand-mark" id="brand-home" aria-label="Weyuna home">
+          <img src="/assets/mark.svg" alt="" />
+        </button>
+        <nav class="rail-nav">
+          <button class="rail-button is-active" data-view="chats" title="Chats" aria-label="Chats">
+            <span data-icon="chat"></span>
+            <span class="rail-badge" id="nav-unread"></span>
+          </button>
+          <button class="rail-button" data-view="contacts" title="Contacts" aria-label="Contacts">
+            <span data-icon="users"></span>
+          </button>
+          <button class="rail-button" data-view="calls" title="Calls" aria-label="Calls">
+            <span data-icon="phone"></span>
+          </button>
+          <button class="rail-button" data-view="saved" title="Saved messages" aria-label="Saved messages">
+            <span data-icon="bookmark"></span>
+          </button>
+        </nav>
+        <div class="rail-bottom">
+          <button class="rail-button" data-view="settings" title="Settings" aria-label="Settings">
+            <span data-icon="settings"></span>
+          </button>
+          <button class="profile-button" id="profile-button" aria-label="Open your profile"></button>
+        </div>
+      </aside>
+
+      <main class="directory" id="contacts-page" aria-label="Contacts" hidden>
+        <section class="directory-index" aria-label="Contact directory">
+          <header class="conversation-header">
+            <div class="pane-title-row"><div><span class="eyebrow">Address book</span><h1>Contacts</h1></div>
+              <span id="contact-count"></span></div>
+            <label class="search-box"><span data-icon="search"></span>
+              <input id="contact-search" type="search" placeholder="Find a name or username" aria-label="Search contacts" autocomplete="off"></label>
+            <button type="button" class="text-button" data-directory-group>New group</button>
+          </header>
+          <div class="directory-scroll" id="directory-list"></div>
+          <nav id="directory-letters" aria-label="Jump to initial"></nav>
+        </section>
+        <section class="contact-profile" id="contact-profile" aria-label="Contact profile"></section>
+      </main>
+      <aside class="conversation-pane" id="chats-index" aria-label="Conversations">
+        <header class="conversation-header">
+          <div class="mobile-brand">
+            <img src="/assets/mark.svg" alt="" />
+            <strong>Weyuna</strong>
+          </div>
+          <div class="pane-title-row">
+            <div>
+              <span class="eyebrow">Workspace</span>
+              <h1>Messages</h1>
+            </div>
+            <button class="icon-button new-chat-button" id="new-chat-button" aria-label="Start a conversation" title="New conversation">
+              <span data-icon="compose"></span>
+            </button>
+          </div>
+          <label class="search-box" for="conversation-search">
+            <span data-icon="search"></span>
+            <input
+              id="conversation-search"
+              type="search"
+              autocomplete="off"
+              placeholder="Search chats and messages"
+              aria-label="Search chats and messages"
+            />
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="filter-tabs" role="tablist" aria-label="Conversation filters">
+            <button class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+            <button class="filter-tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+            <button class="filter-tab" data-filter="groups" role="tab" aria-selected="false">Groups</button>
+          </div>
+        </header>
+        <div class="conversation-list" id="conversation-list"></div>
+        <div class="sidebar-footer">
+          <span class="sync-dot"></span>
+          <span>Connected to local demo</span>
+          <span class="sync-latency">SSE</span>
+        </div>
+      </aside>
+
+      <main class="chat-pane" id="chat-pane">
+        <section class="empty-chat" id="empty-chat">
+          <div class="empty-chat-art">
+            <div class="empty-orbit orbit-one"></div>
+            <div class="empty-orbit orbit-two"></div>
+            <img src="/assets/mark.svg" alt="" />
+          </div>
+          <h2>Your conversations, in one calm place.</h2>
+          <p>Choose a conversation or start something new.</p>
+          <button class="primary-button" data-open-new-chat>
+            <span data-icon="plus"></span>
+            New conversation
+          </button>
+        </section>
+
+        <section class="active-chat" id="active-chat" hidden>
+          <header class="chat-header">
+            <button class="icon-button mobile-back" id="mobile-back" aria-label="Back to conversations">
+              <span data-icon="arrow-left"></span>
+            </button>
+            <button class="chat-identity" id="chat-identity" aria-label="Open conversation details">
+              <span class="avatar" id="chat-avatar"></span>
+              <span class="chat-identity-copy">
+                <strong id="chat-title"></strong>
+                <small id="chat-status"></small>
+              </span>
+            </button>
+            <div class="chat-header-actions">
+              <button class="icon-button" id="chat-search-button" aria-label="Search this conversation" title="Search conversation">
+                <span data-icon="search"></span>
+              </button>
+              <button class="icon-button" id="voice-call-button" aria-label="Start voice call" title="Voice call">
+                <span data-icon="phone"></span>
+              </button>
+              <button class="icon-button video-call-action" id="video-call-button" aria-label="Start video call" title="Video call">
+                <span data-icon="video"></span>
+              </button>
+              <button class="icon-button" id="conversation-menu-button" aria-label="Conversation options" title="Conversation options">
+                <span data-icon="more"></span>
+              </button>
+            </div>
+          </header>
+
+          <div class="agent-strip" id="agent-strip" hidden></div>
+          <div class="chat-search-bar" id="chat-search-bar" hidden>
+            <span data-icon="search"></span>
+            <input id="message-search" type="search" placeholder="Find in this conversation" aria-label="Find in conversation" />
+            <span id="message-search-count"></span>
+            <button class="icon-button small" id="close-message-search" aria-label="Close search">
+              <span data-icon="x"></span>
+            </button>
+          </div>
+
+          <div class="pinned-strip" id="pinned-strip" hidden>
+            <span data-icon="pin"></span>
+            <span><strong>Pinned message</strong><small id="pinned-preview"></small></span>
+            <button class="text-button" id="jump-pinned">View</button>
+          </div>
+
+          <div class="message-scroller" id="message-scroller" aria-label="Message history">
+            <div class="message-flow" id="message-flow"></div>
+            <button class="jump-latest" id="jump-latest" hidden aria-label="Jump to latest message">
+              <span data-icon="chevron-down"></span>
+              <span id="jump-latest-count">Latest</span>
+            </button>
+          </div>
+
+          <div class="typing-indicator" id="typing-indicator" aria-live="polite" hidden>
+            <span class="typing-avatar"></span>
+            <span class="typing-dots"><i></i><i></i><i></i></span>
+            <span id="typing-name">Mia is typing</span>
+          </div>
+
+          <div class="composer-wrap">
+            <div class="mention-picker" id="mention-picker" hidden>
+              <div id="mention-heading" class="mention-heading"></div>
+              <div id="mention-list" role="listbox" aria-label="Mention suggestions"></div>
+              <small id="mention-hint" aria-live="polite"></small>
+            </div>
+            <div class="reply-banner" id="reply-banner" hidden>
+              <span class="reply-accent"></span>
+              <span class="reply-banner-copy">
+                <strong id="reply-name">Replying</strong>
+                <small id="reply-text"></small>
+              </span>
+              <button class="icon-button small" id="cancel-reply" aria-label="Cancel reply">
+                <span data-icon="x"></span>
+              </button>
+            </div>
+            <div class="attachment-preview" id="attachment-preview" hidden></div>
+            <form class="composer" id="message-form">
+              <button class="composer-button" type="button" id="mention-button" aria-label="Mention a participant" aria-haspopup="listbox" aria-controls="mention-list" aria-expanded="false" title="Mention a participant">@</button>
+              <input id="file-input" type="file" hidden />
+              <button class="composer-button" type="button" id="attach-button" aria-label="Attach a file" title="Attach file">
+                <span data-icon="paperclip"></span>
+              </button>
+              <textarea
+                id="message-input"
+                rows="1"
+                maxlength="4000"
+                placeholder="Write a message..."
+                aria-label="Message"
+                aria-controls="mention-list"
+                aria-autocomplete="list"
+              ></textarea>
+              <div class="emoji-anchor">
+                <button class="composer-button" type="button" id="emoji-button" aria-label="Add emoji" title="Emoji">
+                  <span data-icon="smile"></span>
+                </button>
+                <div class="emoji-tray" id="emoji-tray" hidden>
+                  <button type="button">😀</button>
+                  <button type="button">😂</button>
+                  <button type="button">🥹</button>
+                  <button type="button">❤️</button>
+                  <button type="button">👍</button>
+                  <button type="button">👏</button>
+                  <button type="button">🎉</button>
+                  <button type="button">✨</button>
+                  <button type="button">🚀</button>
+                  <button type="button">👀</button>
+                </div>
+              </div>
+              <button class="composer-button voice-button" type="button" id="voice-button" aria-label="Record voice message" title="Voice message">
+                <span data-icon="mic"></span>
+              </button>
+              <button class="send-button" type="submit" id="send-button" aria-label="Send message" title="Send">
+                <span data-icon="send"></span>
+              </button>
+            </form>
+            <div class="recording-bar" id="recording-bar" hidden>
+              <span class="recording-pulse"></span>
+              <span id="recording-time">00:00</span>
+              <span class="recording-line"><i></i></span>
+              <span class="recording-hint">Click send to share a simulated voice note</span>
+              <button class="text-button danger" id="cancel-recording">Cancel</button>
+              <button class="send-button small" id="send-recording" aria-label="Send simulated voice note">
+                <span data-icon="send"></span>
+              </button>
+            </div>
+            <div class="composer-meta">
+              <span id="composer-mode">Demo workspace</span>
+              <span>Enter to send · Shift + Enter for a new line</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="details-pane" id="details-pane" aria-label="Conversation details" hidden></aside>
+    </div>
+
+    <div class="menu-popover" id="menu-popover" hidden></div>
+
+    <dialog class="app-dialog" id="app-dialog">
+      <button class="dialog-close icon-button" id="dialog-close" aria-label="Close dialog">
+        <span data-icon="x"></span>
+      </button>
+      <div id="dialog-content"></div>
+    </dialog>
+
+    <section class="call-screen" id="call-screen" hidden aria-live="polite">
+      <div class="call-noise"></div>
+      <button class="icon-button call-minimize" id="call-minimize" aria-label="Minimize call">
+        <span data-icon="chevron-down"></span>
+      </button>
+      <div class="call-avatar" id="call-avatar"></div>
+      <div class="call-copy">
+        <span id="call-label">Calling</span>
+        <h2 id="call-name">Mia Laurent</h2>
+        <span class="call-timer" id="call-timer">00:00</span>
+      </div>
+      <div class="call-controls">
+        <button class="call-control is-active" id="toggle-microphone" aria-label="Mute microphone">
+          <span data-icon="mic"></span>
+        </button>
+        <button class="call-control" id="toggle-camera" aria-label="Toggle camera">
+          <span data-icon="video"></span>
+        </button>
+        <button class="call-control end-call" id="end-call" aria-label="End call">
+          <span data-icon="phone"></span>
+        </button>
+      </div>
+      <p class="simulation-note">Simulation only · no microphone or camera is accessed</p>
+    </section>
+
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+    <div class="sr-only" id="live-region" aria-live="polite"></div>
+    <script type="module" src="/app.js?v=directory1"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "weyuna",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A Telegram-inspired messaging product simulation with a dependency-free web client and Node.js backend.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check src/store.js && node --check src/agents.js && node --check public/app.js && node --check public/chat-view.js && node --check public/i18n.js && node --check examples/reply-once.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
