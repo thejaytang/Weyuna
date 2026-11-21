@@ -164,6 +164,34 @@ test('creates group and channel conversations and supports global search', async
   assert.equal(results.conversations.length, 2);
 });
 
+test('forwarding increments recipient unread counts without changing their archive preference', async () => {
+  const login = await request('/api/login', {
+    method: 'POST', headers: { cookie: '' }, body: { key: server.loginKeys.mia },
+  });
+  const miaCookie = login.headers.get('set-cookie').split(';')[0];
+  await request('/api/conversations/chat-mia', {
+    method: 'PATCH', headers: { cookie: miaCookie }, body: { read: true, archived: true },
+  });
+  await request('/api/conversations/chat-mia', {
+    method: 'PATCH', body: { read: true, archived: true },
+  });
+
+  for (let count = 1; count <= 2; count++) {
+    const response = await request('/api/messages/m-mia-1/forward', {
+      method: 'POST', body: { conversationId: 'chat-mia' },
+    });
+    assert.equal(response.status, 201);
+    const recipient = await request('/api/bootstrap', { headers: { cookie: miaCookie } }).then((r) => r.json());
+    const chat = recipient.conversations.find((c) => c.id === 'chat-mia');
+    assert.equal(chat.unread, count);
+    assert.equal(chat.archived, true);
+  }
+  const sender = await request('/api/bootstrap').then((r) => r.json());
+  const chat = sender.conversations.find((c) => c.id === 'chat-mia');
+  assert.equal(chat.unread, 0);
+  assert.equal(chat.archived, false);
+});
+
 test('updates profile, settings, and conversation state', async () => {
   const profileResponse = await request('/api/profile', {
     method: 'PATCH',
@@ -208,6 +236,27 @@ test('rejects invalid usernames, JSON, and channel calls', async () => {
     body: { conversationId: 'channel-design', type: 'voice' },
   });
   assert.equal(call.status, 409);
+});
+
+test('rejected profile updates leave both live and persisted user fields unchanged', async () => {
+  const snapshot = await request('/api/bootstrap').then((r) => r.json());
+  const original = snapshot.users.find((u) => u.id === 'ava');
+  for (const [body, status] of [
+    [{ name: 'Rejected name', username: 'mialaurent' }, 409],
+    [{ name: 'Rejected name', username: 'invalid name' }, 400],
+    [{ name: 'Rejected name', username: 'ava_rejected', bio: 'x'.repeat(141) }, 400],
+    [{ name: 'Rejected name', username: 'ava_rejected', bio: null }, 400],
+  ]) {
+    const response = await request('/api/profile', { method: 'PATCH', body });
+    assert.equal(response.status, status);
+    const live = await request('/api/bootstrap').then((r) => r.json());
+    assert.deepEqual(live.users.find((u) => u.id === 'ava'), original);
+  }
+  // An unrelated successful write must not persist any rejected profile fields.
+  await request('/api/settings', { method: 'PATCH', body: { compact: false } });
+  const reloaded = new Store({ dataFile: join(directory, 'state.json'), demoReplies: false });
+  await reloaded.init();
+  assert.deepEqual(reloaded.snapshot().users.find((u) => u.id === 'ava'), original);
 });
 
 test('starts and ends simulated direct calls', async () => {

@@ -739,8 +739,11 @@ export class Store {
         status: 'delivered',
       };
       state.messages.push(forwarded);
-      this.chatPrefs(conversation).unread = 0;
-      this.chatPrefs(conversation).archived = false;
+      for (const id of conversation.memberIds) {
+        const prefs = this.chatPrefs(conversation, id);
+        if (id === this.viewer) { prefs.unread = 0; prefs.archived = false; }
+        else prefs.unread++;
+      }
       return forwarded;
     });
   }
@@ -851,29 +854,28 @@ export class Store {
 
   async updateProfile(input) {
     const user = this.state.users.find((item) => item.id === this.viewer);
-    return this.commit('profile.updated', () => {
-      if (input.name !== undefined) user.name = assertText(input.name, 'Name', 80);
-      if (input.username !== undefined) {
-        const username = assertText(input.username, 'Username', 32)
-          .replace(/^@/, '')
-          .toLowerCase();
-        if (!/^[a-z0-9_]{3,32}$/.test(username)) {
-          throw new HttpError(400, 'Username must use 3-32 letters, numbers, or underscores');
-        }
-        const inUse = this.state.users.some(
-          (item) => item.id !== user.id && item.username.toLowerCase() === username,
-        );
-        if (inUse) throw new HttpError(409, 'That username is already in use');
-        user.username = username;
+    const changes = {};
+    if (input.name !== undefined) changes.name = assertText(input.name, 'Name', 80);
+    if (input.username !== undefined) {
+      const username = assertText(input.username, 'Username', 32)
+        .replace(/^@/, '')
+        .toLowerCase();
+      if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+        throw new HttpError(400, 'Username must use 3-32 letters, numbers, or underscores');
       }
-      if (input.bio !== undefined) {
-        if (typeof input.bio !== 'string' || input.bio.length > 140) {
-          throw new HttpError(400, 'Bio must be a string of 140 characters or fewer');
-        }
-        user.bio = input.bio.trim();
+      const inUse = this.state.users.some(
+        (item) => item.id !== user.id && item.username.toLowerCase() === username,
+      );
+      if (inUse) throw new HttpError(409, 'That username is already in use');
+      changes.username = username;
+    }
+    if (input.bio !== undefined) {
+      if (typeof input.bio !== 'string' || input.bio.length > 140) {
+        throw new HttpError(400, 'Bio must be a string of 140 characters or fewer');
       }
-      return user;
-    });
+      changes.bio = input.bio.trim();
+    }
+    return this.commit('profile.updated', () => Object.assign(user, changes));
   }
 
   async updateSettings(input) {
