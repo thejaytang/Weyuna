@@ -107,6 +107,7 @@ const elements = {
 
 const app = {
   mentions: new Set(),
+  submitting: false,
   data: null,
   activeConversationId: null,
   filter: 'all',
@@ -721,7 +722,7 @@ function renderComposerBanner() {
       <button class="icon-button small" id="remove-attachment" type="button" aria-label="${t("Remove attachment")}">${icon('x')}</button>`;
   }
   elements.sendButton.disabled =
-    (!elements.messageInput.value.trim() && !app.attachment) || Boolean(app.recording);
+    app.submitting || (!elements.messageInput.value.trim() && !app.attachment) || Boolean(app.recording);
 }
 
 function renderDetails() {
@@ -952,7 +953,7 @@ function connectEvents() {
         update.payload?.senderId !== app.data.currentUserId
       ) {
         elements.typing.hidden = true;
-        if (app.data.settings.sound) playTone();
+        if (app.data.settings.sound && !activeConversation()?.muted) playTone();
         api(`/api/conversations/${encodeURIComponent(app.activeConversationId)}`, {
           method: 'PATCH',
           body: { read: true },
@@ -1435,64 +1436,64 @@ function cancelComposerContext() {
 }
 
 async function submitMessage() {
+  if (app.submitting) return;
   const conversation = activeConversation();
   if (!conversation) return;
   const text = elements.messageInput.value.trim();
   pruneMentions();
   if (!text && !app.attachment) return;
+  app.submitting = true;
   elements.sendButton.disabled = true;
-  if (app.editingMessageId) {
-    const result = await safely(
-      () =>
-        api(`/api/messages/${encodeURIComponent(app.editingMessageId)}`, {
-          method: 'PATCH',
-          body: { text, mentions: [...app.mentions] },
-        }),
-      'Could not edit the message',
-    );
-    if (!result) {
-      elements.sendButton.disabled = false;
-      return;
+  try {
+    if (app.editingMessageId) {
+      const result = await safely(
+        () =>
+          api(`/api/messages/${encodeURIComponent(app.editingMessageId)}`, {
+            method: 'PATCH',
+            body: { text, mentions: [...app.mentions] },
+          }),
+        'Could not edit the message',
+      );
+      if (!result) return;
+      app.editingMessageId = null;
+    } else {
+      const result = await safely(
+        () =>
+          api(`/api/conversations/${encodeURIComponent(conversation.id)}/messages`, {
+            method: 'POST',
+            body: {
+              text,
+              replyToId: app.replyToId,
+              mentions: [...app.mentions],
+              attachments: app.attachment ? [app.attachment] : [],
+            },
+          }),
+        'Could not send the message',
+      );
+      if (!result) return;
+      if (app.data.settings.demoReplies && !conversation.openAgents?.length && conversation.type !== 'channel' &&
+          conversation.memberIds.some((id) => userById(id)?.simulated) && !app.mentions.size) {
+        const view = conversationView(conversation);
+        elements.typingName.textContent = t('{name} is typing', { name: view.user?.name || t('Someone') });
+        elements.typing.hidden = false;
+        setTimeout(() => {
+          elements.typing.hidden = true;
+        }, 1800);
+      }
     }
-    app.editingMessageId = null;
-  } else {
-    const result = await safely(
-      () =>
-        api(`/api/conversations/${encodeURIComponent(conversation.id)}/messages`, {
-          method: 'POST',
-          body: {
-            text,
-            replyToId: app.replyToId,
-            mentions: [...app.mentions],
-            attachments: app.attachment ? [app.attachment] : [],
-          },
-        }),
-      'Could not send the message',
-    );
-    if (!result) {
-      elements.sendButton.disabled = false;
-      return;
-    }
-    if (app.data.settings.demoReplies && !conversation.openAgents?.length && conversation.type !== 'channel' &&
-        conversation.memberIds.some((id) => userById(id)?.simulated) && !app.mentions.size) {
-      const view = conversationView(conversation);
-      elements.typingName.textContent = t('{name} is typing', { name: view.user?.name || t('Someone') });
-      elements.typing.hidden = false;
-      setTimeout(() => {
-        elements.typing.hidden = true;
-      }, 1800);
-    }
+    elements.messageInput.value = '';
+    app.mentions.clear();
+    hideMentionPicker();
+    elements.messageInput.style.height = '';
+    app.replyToId = null;
+    app.attachment = null;
+    elements.fileInput.value = '';
+    elements.messageInput.focus();
+    requestAnimationFrame(scrollToLatest);
+  } finally {
+    app.submitting = false;
+    renderComposerBanner();
   }
-  elements.messageInput.value = '';
-  app.mentions.clear();
-  hideMentionPicker();
-  elements.messageInput.style.height = '';
-  app.replyToId = null;
-  app.attachment = null;
-  elements.fileInput.value = '';
-  renderComposerBanner();
-  elements.messageInput.focus();
-  requestAnimationFrame(scrollToLatest);
 }
 
 async function toggleSaved(messageId) {
@@ -1592,7 +1593,7 @@ function resizeComposer() {
   elements.messageInput.style.height = 'auto';
   elements.messageInput.style.height = `${Math.min(elements.messageInput.scrollHeight, 130)}px`;
   elements.sendButton.disabled =
-    (!elements.messageInput.value.trim() && !app.attachment) || Boolean(app.recording);
+    app.submitting || (!elements.messageInput.value.trim() && !app.attachment) || Boolean(app.recording);
 }
 
 function renderAgentStrip(c) {

@@ -1,5 +1,13 @@
 # Project State
 
+## 2026-11-21: Review fixes for message and profile state
+
+Forwarding now increments every recipient's unread count and preserves their archive preference. Profile updates validate all supplied fields before changing the stored user. Repeated submissions are blocked while a send or edit is pending; failures preserve the draft and allow a retry. Incoming messages respect the active conversation's mute setting while retaining read acknowledgements.
+
+All 26 tests and syntax checks passed. The regression tests reproduce the original failures before the fixes, then check recipient unread counts, rejected profile changes in live and persisted state, duplicate send/edit requests, retry behavior and notification sounds. Browser handlers are exercised with controlled DOM and network boundaries in Node's VM.
+
+The next integration check remains a user-provided agent runtime.
+
 ## 2026-11-18 11:24 CET: Contacts, mentions, speaker labels and interface language
 
 Contacts has its own searchable page. The mention picker shows at most six results and lets users narrow by owner or Agent UID. Message alignment follows the owner; the byline identifies the actual sender. Settings offers English and Simplified Chinese, saved separately for each human account.
